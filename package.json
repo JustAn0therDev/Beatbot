@@ -1,0 +1,22 @@
+{
+  "name": "beatbot",
+  "version": "1.0.0",
+  "description": "A bot for streaming youtube videos",
+  "main": "bot.js",
+  "scripts": {
+    "test": "test",
+    "start": "nodemon bot.js"
+  },
+  "author": "Ruan Montelo (JustAn0therDev)",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^11.5.1",
+    "ffmpeg": "0.0.4",
+    "ffmpeg-binaries": "^4.0.0",
+    "nodemon": "^1.19.2",
+    "opus": "0.0.0",
+    "opusscript": "0.0.7",
+    "rebuild": "^0.1.2",
+    "ytdl-core": "^0.29.7"
+  }
+}

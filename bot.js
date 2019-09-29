@@ -1,23 +1,23 @@
 const { Client } = require('discord.js');
 const token = require('./authtoken');
 const ytdl = require('ytdl-core'); 
-let bot = new Client();
+let beatBot = new Client();
 let prefix = "&";
 let queue = new Map();
 
 //Login to the discord API.
-bot.login(token);
+beatBot.login(token);
 
-bot.on('message', msg => {
+beatBot.on('message', msg => {
     if (msg.content.startsWith(`${prefix}ping`)) 
-    msg.reply(`${bot.ping}ms`);
+    msg.reply(`${beatBot.ping}ms`);
 });
 
-bot.on('message', msg => {
+beatBot.on('message', msg => {
     if (!msg.content.startsWith(`${prefix}play`)) return;
     msg.content.trim();
     const args = msg.content.split(' ');
-    if (msg.author.bot) return;
+    if (msg.author.beatBot) return;
     if (!args[1]) return msg.reply(`you must send me a link for me to play the video`);
 	const serverQueue = queue.get(msg.guild.id);
 
@@ -66,7 +66,7 @@ async function execute(msg, serverQueue) {
 		try {
 			var connection = voiceChannel.join();
             queueConstruct.connection = connection;
-            msg.channel.send('Queue created and video added.');
+            msg.channel.send(`The following video has been added to the queue: ${song.title}`);
             if (queueConstruct.songs.length > 0) {
                 play(msg.guild, queueConstruct.songs[0]);
             } else {
@@ -112,34 +112,58 @@ function stop(msg, serverQueue) {
     msg.channel.send('Queue stopped and cleaned.');
 }
 
-function play(guild, song) {
+async function play(guild, song) {
 	const serverQueue = queue.get(guild.id);
+
 	if (!song) {
         serverQueue.voiceChannel.leave();
         queue.delete(guild.id);
 		return;
 	}
 
-    serverQueue.voiceChannel.join()
-        .then(connection => {
-        const stream = ytdl(song.url, { filter : 'audioonly' });
-        connection.playStream(stream);
-        })
-        .catch(e => {
-            console.log(e);
-        });
+	const dispatcher = await serverQueue.voiceChannel.connection.playStream(ytdl(song.url))
+		.on('end', () => {
+			console.log('Music ended!');
+            serverQueue.songs.shift();
+            if (serverQueue.songs.length > 0) {
+                play(guild, serverQueue.songs[0]);
+            } else {
+                // clearQueue();
+                guild.voiceConnection.channel.leave();
+            }
+		})
+		.on('error', error => {
+			console.error(error);
+		});
+	dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
 }
 
-bot.on('message', (msg) => {
+beatBot.on('message', (msg) => {
+    if (msg.content.startsWith(`${prefix}queue`)) {
+        if (queue.length == 1) {
+            msg.channel.send(`There is currently one song in queue`);
+        } else if (queue.length > 1) {
+            msg.channel.send(`There are currently ${queue.length} songs in queue`);
+        } else {
+            msg.channel.send(`There are currently no songs in queue`);
+        }
+    }
+});
+
+beatBot.on('message', (msg) => {
     if (msg.content.startsWith(`${prefix}leave`)) {
       if (msg.guild.voiceConnection) {
            msg.guild.voiceConnection.channel.leave();
            msg.reply('Leaving channel!');
-           
-           //Resets the queue 
-           queue = new Map();
+           clearQueue();
     } else {
         msg.reply('I must be in a voice channel to leave!');  
     }
 }
 });
+
+//Function used to restart the queue everytime the bot leaves a voice channel.
+const clearQueue = () => {
+    if (beatBot.voice.connections == 0)
+        queue = new Map();
+}

@@ -19,11 +19,11 @@ beatBot.on('message', msg => {
     const args = msg.content.split(' ');
     if (msg.author.beatBot) return;
     if (!args[1]) return msg.reply(`you must send me a link for me to play the video`);
-	const serverQueue = queue.get(msg.guild.id);
+    const serverQueue = queue.get(msg.guild.id);
 
 	if (msg.content.startsWith(`${prefix}play`)) {
 		execute(msg, serverQueue);
-	} else if (msg.content.startsWith(`${prefix}skip`)) {
+	} else if (msg.content.startsWith(`${prefix}skip`)) {   
 		skip(msg, serverQueue);
 	} else if (msg.content.startsWith(`${prefix}pause`)) {
         pause(msg, serverQueue);
@@ -50,8 +50,10 @@ async function execute(msg, serverQueue) {
 		title: songInfo.title,
 		url: songInfo.video_url,
 	};
+    // !serverQueue
 
-	if (!serverQueue) {
+    //It checks if serverQueue doesn't have an undefined or null value and checks if it has songs in its queue.
+	if (!serverQueue || serverQueue.songs.length == 0) {
 		const queueConstruct = {
 			textChannel: msg.channel,
 			voiceChannel: voiceChannel,
@@ -66,7 +68,7 @@ async function execute(msg, serverQueue) {
 		try {
 			var connection = voiceChannel.join();
             queueConstruct.connection = connection;
-            msg.channel.send(`The following video has been added to the queue: ${song.title}`);
+            msg.channel.send(`Now playing: ${song.title}`);
             if (queueConstruct.songs.length > 0) {
                 play(msg.guild, queueConstruct.songs[0]);
             } else {
@@ -128,7 +130,6 @@ async function play(guild, song) {
             if (serverQueue.songs.length > 0) {
                 play(guild, serverQueue.songs[0]);
             } else {
-                // clearQueue();
                 guild.voiceConnection.channel.leave();
             }
 		})
@@ -155,15 +156,9 @@ beatBot.on('message', (msg) => {
       if (msg.guild.voiceConnection) {
            msg.guild.voiceConnection.channel.leave();
            msg.reply('Leaving channel!');
-           clearQueue();
+           delete serverQueue;
     } else {
         msg.reply('I must be in a voice channel to leave!');  
     }
 }
 });
-
-//Function used to restart the queue everytime the bot leaves a voice channel.
-const clearQueue = () => {
-    if (beatBot.voice.connections == 0)
-        queue = new Map();
-}

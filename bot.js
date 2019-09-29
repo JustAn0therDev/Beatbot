@@ -134,7 +134,7 @@ async function play(guild, song) {
             }
 		})
 		.on('error', error => {
-			console.error(error);
+			serverQueue.textChannel.sendMessage(JSON.stringify(error));
 		});
 	dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
 }
@@ -155,7 +155,7 @@ beatBot.on('message', (msg) => {
     if (msg.content.startsWith(`${prefix}leave`)) {
       if (msg.guild.voiceConnection) {
            msg.guild.voiceConnection.channel.leave();
-           msg.reply('Leaving channel!');
+           msg.reply('leaving channel!');
            delete serverQueue;
     } else {
         msg.reply('I must be in a voice channel to leave!');  

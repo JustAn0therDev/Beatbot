@@ -10,7 +10,7 @@ beatBot.login(token);
 
 beatBot.on('message', msg => {
     if (msg.content.startsWith(`${prefix}ping`)) 
-    msg.reply(`${beatBot.ping}ms`);
+    msg.reply(`pong! Latency: ${Math.round(beatBot.ping)}ms`);
 });
 
 beatBot.on('message', msg => {
@@ -50,10 +50,9 @@ async function execute(msg, serverQueue) {
 		title: songInfo.title,
 		url: songInfo.video_url,
 	};
-    // !serverQueue
 
     //It checks if serverQueue doesn't have an undefined or null value and checks if it has songs in its queue.
-	if (!serverQueue || serverQueue.songs.length == 0) {
+	if (!serverQueue || serverQueue.songs.length === 0) {
 		const queueConstruct = {
 			textChannel: msg.channel,
 			voiceChannel: voiceChannel,
@@ -66,13 +65,13 @@ async function execute(msg, serverQueue) {
 		queueConstruct.songs.push(song);
 
 		try {
-			var connection = voiceChannel.join();
+			var connection = await voiceChannel.join();
             queueConstruct.connection = connection;
             msg.channel.send(`Now playing: ${song.title}`);
             if (queueConstruct.songs.length > 0) {
-                play(msg.guild, queueConstruct.songs[0]);
+                await play(msg.guild, queueConstruct.songs[0]);
             } else {
-                msg.guild.voiceConnection.channel.leave();
+                await msg.guild.voiceConnection.channel.leave();
                 msg.reply('Leaving channel!');
             }
 		} catch (err) {
@@ -80,7 +79,7 @@ async function execute(msg, serverQueue) {
 			msg.channel.send(err);
 		}
 	} else {
-        msg.channel.send(`The following video has been added to the queue: ${song.title}`);
+        await msg.channel.send(`The following video has been added to the queue: ${song.title}`);
         serverQueue.songs.push(song); 
 	}
 
@@ -115,7 +114,7 @@ function stop(msg, serverQueue) {
 }
 
 async function play(guild, song) {
-	const serverQueue = queue.get(guild.id);
+	const serverQueue = await queue.get(guild.id);
 
 	if (!song) {
         serverQueue.voiceChannel.leave();

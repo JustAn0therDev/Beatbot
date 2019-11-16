@@ -1,9 +1,10 @@
 const { Client } = require('discord.js');
 const token = require('./authtoken');
 const ytdl = require('ytdl-core'); 
-let beatBot = new Client();
-let prefix = "&";
-let queue = new Map();
+const beatBot = new Client();
+const prefix = "&";
+
+var queue = new Map();
 
 //Login to the discord API.
 beatBot.login(token);
@@ -14,14 +15,15 @@ beatBot.on('message', msg => {
 });
 
 beatBot.on('message', msg => {
-    if (!msg.content.startsWith(`${prefix}play`)) return;
-    msg.content.trim();
-    const args = msg.content.split(' ');
+    if (!msg.content.startsWith(`${prefix}`)) return;
+
     if (msg.author.beatBot) return;
-    if (!args[1]) return msg.reply(`you must send me a link for me to play the video`);
+    msg.content.trim();
     const serverQueue = queue.get(msg.guild.id);
 
 	if (msg.content.startsWith(`${prefix}play`)) {
+        const args = msg.content.split(' ');
+        if (!args[1]) return msg.reply(`you must send me a link for me to play the video`);
 		execute(msg, serverQueue);
 	} else if (msg.content.startsWith(`${prefix}skip`)) {   
 		skip(msg, serverQueue);
@@ -32,20 +34,32 @@ beatBot.on('message', msg => {
         return;
     } else if (msg.content.startsWith(`${prefix}stop`)) {
         stop(msg, serverQueue);
+    } else if (msg.content.startsWith(`${prefix}nowplaying`)) {
+        nowPlaying(msg, serverQueue);
+    } else {
+        return;
     }
 });
 
 async function execute(msg, serverQueue) {
     const args = msg.content.split(' ');
-
+    var songInfo;
 	const voiceChannel = msg.member.voiceChannel;
-	if (!voiceChannel) return msg.reply('you need to be in a voice channel to play a video.');
-	const permissions = voiceChannel.permissionsFor(msg.client.user);
+    if (!voiceChannel) return msg.reply('you need to be in a voice channel to play a video.');
+    
+    const permissions = voiceChannel.permissionsFor(msg.client.user);
+    
 	if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
 		return msg.reply('I do not have the permission to speak or join the current voice channel.');
     }
 
-	const songInfo = await ytdl.getInfo(args[1]);
+    try {
+        songInfo = await ytdl.getInfo(args[1]);
+    } catch (error) {
+        msg.channel.send(`The requested video cannot be played because I received the following error from the YouTube API: "${error.message}"`);
+        return;
+    }
+
 	const song = {
 		title: songInfo.title,
 		url: songInfo.video_url,
@@ -59,10 +73,10 @@ async function execute(msg, serverQueue) {
 			connection: null,
 			songs: [],
 			volume: 5,
-			playing: true,
+			playing: true
 		};
 		queue.set(msg.guild.id, queueConstruct);
-		queueConstruct.songs.push(song);
+        queueConstruct.songs.push(song);
 
 		try {
 			var connection = await voiceChannel.join();
@@ -85,32 +99,45 @@ async function execute(msg, serverQueue) {
 
 }
 
-function skip(msg, serverQueue) {
+async function skip(msg, serverQueue) {
 	if (!msg.member.voiceChannel) return msg.reply('you have to be in a voice channel to stop the queue!');
-	if (!serverQueue) return msg.reply('there is no video I can skip.');
-    serverQueue.connection.dispatcher.end();
-    msg.channel.send('Video skipped.');
+    if (!serverQueue) return msg.reply('there is no video I can skip.');
+    try {
+       await serverQueue.connection.dispatcher.end();
+    } catch (e) {
+        console.log(e);
+        await msg.channel.send(`Video ${serverQueue.songs[0].title} skipped.`);
+        serverQueue.songs.shift();
+    }
 }
 
-function pause(msg, serverQueue) {
+async function pause(msg, serverQueue) {
     if(!msg.member.voiceChannel) return msg.reply('you have to be in a voice channel.');
     if (!serverQueue) return msg.reply('there is no video for me to pause.');
-    serverQueue.connection.dispatcher.pause();
+    await serverQueue.connection.dispatcher.pause();
     msg.channel.send('Video paused.');
 }
 
-function resume(msg, serverQueue) {
+async function resume(msg, serverQueue) {
     if(!msg.member.voiceChannel) return msg.reply('you have to be in a voice channel.');
     if (!serverQueue) return msg.reply('there is no video for me to resume.');
-    serverQueue.connection.dispatcher.resume();
+    await serverQueue.connection.dispatcher.resume();
     msg.channel.send('Video resumed.');
 }
 
-function stop(msg, serverQueue) {
+async function stop(msg, serverQueue) {
 	if (!msg.member.voiceChannel) return msg.reply('you have to be in a voice channel to stop the queue!');
     serverQueue.songs = [];
-    serverQueue.connection.dispatcher.end();
+    await serverQueue.connection.dispatcher.end();
     msg.channel.send('Queue stopped and cleaned.');
+}
+
+async function nowPlaying(msg, serverQueue) {
+    if (serverQueue.songs.length > 0) {
+        await msg.channel.send(`Now playing: ${serverQueue.songs[0].title}`);
+    } else {
+        await msg.channel.send("There is nothing playing right now.");
+    }
 }
 
 async function play(guild, song) {
@@ -121,8 +148,8 @@ async function play(guild, song) {
         queue.delete(guild.id);
 		return;
 	}
-
-	const dispatcher = await serverQueue.voiceChannel.connection.playStream(ytdl(song.url))
+    try { 
+        const dispatcher = await serverQueue.voiceChannel.connection.playStream(ytdl(song.url))
 		.on('end', () => {
 			console.log('Music ended!');
             serverQueue.songs.shift();
@@ -134,30 +161,32 @@ async function play(guild, song) {
 		})
 		.on('error', error => {
             console.log(error);
-		});
-	dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+        });
+        dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+    } catch (error) {
+        msg.guild.defaultChannel.send(error);
+    }
 }
 
 beatBot.on('message', (msg) => {
     if (msg.content.startsWith(`${prefix}queue`)) {
-        if (queue.length == 1) {
-            msg.channel.send(`There is currently one song in queue`);
-        } else if (queue.length > 1) {
-            msg.channel.send(`There are currently ${queue.length} songs in queue`);
-        } else {
-            msg.channel.send(`There are currently no songs in queue`);
-        }
+        if (queue.length > 0) {
+            let count = 1;
+            queue.forEach((value, key) => {
+                msg.channel.send(`${count} - ${key} ${value}`);
+                count++;
+            });
+        } 
     }
 });
 
 beatBot.on('message', (msg) => {
     if (msg.content.startsWith(`${prefix}leave`)) {
-      if (msg.guild.voiceConnection) {
+        if (msg.guild.voiceConnection) {
            msg.guild.voiceConnection.channel.leave();
            msg.reply('leaving channel!');
-           delete serverQueue;
-    } else {
-        msg.reply('I must be in a voice channel to leave!');  
+        } else {
+            msg.reply('I must be in a voice channel to leave!');  
+        }
     }
-}
 });

@@ -19,7 +19,7 @@ commands.forEach((command) => {
             if (command.helpCommand === undefined) 
                 command.execute(msg, beatBot, queue);
             else 
-                command.helpCommand(msg, commands);
+                command.execute(msg, commands);
         }
     });
 });
@@ -163,7 +163,7 @@ async function play(guild, song) {
     try { 
         const dispatcher = await serverQueue.voiceChannel.connection.playStream(ytdl(song.url))
 		.on('end', () => {
-			console.log('Music ended!');
+            console.log('Music ended!');
             serverQueue.songs.shift();
             if (serverQueue.songs.length > 0) {
                 play(guild, serverQueue.songs[0]);

@@ -6,20 +6,23 @@ const beatBot = new Client();
 const queue = new Map();
 const prefix = "&";
 const commandFiles = fs.readdirSync('./commands');
-var commands = [];
 
+const commands = [];
 for (let i = 0; i < commandFiles.length; i++) {
     commands.push(require(`./commands/${commandFiles[i]}`));
 }
-
 commands.forEach((command) => {
     beatBot.on('message', (msg) => {
         if(msg.content.startsWith(`${prefix}${command.name}`)) {
-            command.execute(msg, beatBot);
+            command.execute(msg, beatBot, queue);
         }
     });
 });
 
+//---------------------------------------------------------------
+
+/* Voice channel and video play commands will stay in the same bot.js file
+ because they need a global variable context for the Map queue to work properly. */
 beatBot.on('message', msg => {
     if (!msg.content.startsWith(`${prefix}`)) return;
 
@@ -173,18 +176,5 @@ async function play(guild, song) {
         msg.guild.defaultChannel.send(error);
     }
 }
-
-beatBot.on('message', (msg) => {
-    if (msg.content.startsWith(`${prefix}queue`)) {
-        if (queue.length > 0) {
-            let count = 1;
-            queue.forEach((value, key) => {
-                msg.channel.send(`${count} - ${key} ${value}`);
-                count++;
-            });
-        } 
-    }
-});
-
 //Login to the discord API.
 beatBot.login(token);

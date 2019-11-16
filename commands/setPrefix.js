@@ -8,7 +8,7 @@ module.exports = {
             return;
         } else {
             beatBot.prefix = args[1];
-            msg.channel.send(`The prefix for this server has been set to ${beatBot.prefix}`);
+            msg.channel.send(`The prefix for this server has been set to "${beatBot.prefix}"`);
         }
     }
 }

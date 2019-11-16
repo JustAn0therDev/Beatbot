@@ -14,7 +14,10 @@ for (let i = 0; i < commandFiles.length; i++) {
 commands.forEach((command) => {
     beatBot.on('message', (msg) => {
         if(msg.content.startsWith(`${prefix}${command.name}`)) {
-            command.execute(msg, beatBot, queue);
+            if (command.helpCommand === undefined) 
+                command.execute(msg, beatBot, queue);
+            else 
+                command.helpCommand(msg, commands);
         }
     });
 });

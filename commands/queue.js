@@ -1,5 +1,6 @@
 module.exports = {
     name: 'queue',
+    description: 'Shows the currently available queue for the bot',
     async execute(msg, beatBot, queue) {
         try {
             if (queue.length > 0) {

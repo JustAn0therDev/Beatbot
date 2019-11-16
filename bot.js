@@ -4,16 +4,18 @@ const token = require('./authtoken');
 const ytdl = require('ytdl-core'); 
 const beatBot = new Client();
 const queue = new Map();
-const prefix = "&";
+beatBot.prefix = "&";
 const commandFiles = fs.readdirSync('./commands');
-
 const commands = [];
 for (let i = 0; i < commandFiles.length; i++) {
     commands.push(require(`./commands/${commandFiles[i]}`));
 }
+
+beatBot.login(token);
+
 commands.forEach((command) => {
     beatBot.on('message', (msg) => {
-        if(msg.content.startsWith(`${prefix}${command.name}`)) {
+        if(msg.content.startsWith(`${beatBot.prefix}${command.name}`) && !msg.author.bot) {
             if (command.helpCommand === undefined) 
                 command.execute(msg, beatBot, queue);
             else 
@@ -27,26 +29,24 @@ commands.forEach((command) => {
 /* Voice channel and video play commands will stay in the same bot.js file
  because they need a global variable context for the Map queue to work properly. */
 beatBot.on('message', msg => {
-    if (!msg.content.startsWith(`${prefix}`)) return;
-
-    if (msg.author.beatBot) return;
+    if (!msg.content.startsWith(`${beatBot.prefix}`)) return;
     msg.content.trim();
     const serverQueue = queue.get(msg.guild.id);
 
-	if (msg.content.startsWith(`${prefix}play`)) {
+	if (msg.content.startsWith(`${beatBot.prefix}play`)) {
         const args = msg.content.split(' ');
         if (!args[1]) return msg.reply(`you must send me a link for me to play the video`);
 		executePlay(msg, serverQueue);
-	} else if (msg.content.startsWith(`${prefix}skip`)) {   
+	} else if (msg.content.startsWith(`${beatBot.prefix}skip`)) {   
 		skip(msg, serverQueue);
-	} else if (msg.content.startsWith(`${prefix}pause`)) {
+	} else if (msg.content.startsWith(`${beatBot.prefix}pause`)) {
         pause(msg, serverQueue);
-    } else if (msg.content.startsWith(`${prefix}resume`)) {
+    } else if (msg.content.startsWith(`${beatBot.prefix}resume`)) {
         resume(msg, serverQueue);
         return;
-    } else if (msg.content.startsWith(`${prefix}stop`)) {
+    } else if (msg.content.startsWith(`${beatBot.prefix}stop`)) {
         stop(msg, serverQueue);
-    } else if (msg.content.startsWith(`${prefix}nowplaying`)) {
+    } else if (msg.content.startsWith(`${beatBot.prefix}nowplaying`)) {
         nowPlaying(msg, serverQueue);
     } else {
         return;
@@ -179,5 +179,3 @@ async function play(guild, song) {
         msg.guild.defaultChannel.send(error);
     }
 }
-//Login to the discord API.
-beatBot.login(token);

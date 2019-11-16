@@ -1,17 +1,23 @@
 const { Client } = require('discord.js');
+const fs = require('fs');
 const token = require('./authtoken');
 const ytdl = require('ytdl-core'); 
 const beatBot = new Client();
+const queue = new Map();
 const prefix = "&";
+const commandFiles = fs.readdirSync('./commands');
+var commands = [];
 
-var queue = new Map();
+for (let i = 0; i < commandFiles.length; i++) {
+    commands.push(require(`./commands/${commandFiles[i]}`));
+}
 
-//Login to the discord API.
-beatBot.login(token);
-
-beatBot.on('message', msg => {
-    if (msg.content.startsWith(`${prefix}ping`)) 
-    msg.reply(`pong! Latency: ${Math.round(beatBot.ping)}ms`);
+commands.forEach((command) => {
+    beatBot.on('message', (msg) => {
+        if(msg.content.startsWith(`${prefix}${command.name}`)) {
+            command.execute(msg, beatBot);
+        }
+    });
 });
 
 beatBot.on('message', msg => {
@@ -24,7 +30,7 @@ beatBot.on('message', msg => {
 	if (msg.content.startsWith(`${prefix}play`)) {
         const args = msg.content.split(' ');
         if (!args[1]) return msg.reply(`you must send me a link for me to play the video`);
-		execute(msg, serverQueue);
+		executePlay(msg, serverQueue);
 	} else if (msg.content.startsWith(`${prefix}skip`)) {   
 		skip(msg, serverQueue);
 	} else if (msg.content.startsWith(`${prefix}pause`)) {
@@ -41,7 +47,7 @@ beatBot.on('message', msg => {
     }
 });
 
-async function execute(msg, serverQueue) {
+async function executePlay(msg, serverQueue) {
     const args = msg.content.split(' ');
     var songInfo;
 	const voiceChannel = msg.member.voiceChannel;
@@ -180,13 +186,5 @@ beatBot.on('message', (msg) => {
     }
 });
 
-beatBot.on('message', (msg) => {
-    if (msg.content.startsWith(`${prefix}leave`)) {
-        if (msg.guild.voiceConnection) {
-           msg.guild.voiceConnection.channel.leave();
-           msg.reply('leaving channel!');
-        } else {
-            msg.reply('I must be in a voice channel to leave!');  
-        }
-    }
-});
+//Login to the discord API.
+beatBot.login(token);

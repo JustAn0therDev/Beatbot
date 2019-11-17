@@ -16,10 +16,14 @@ beatBot.login(token);
 commands.forEach((command) => {
     beatBot.on('message', (msg) => {
         if(msg.content.startsWith(`${beatBot.prefix}${command.name}`) && !msg.author.bot) {
-            if (command.helpCommand === undefined) 
-                command.execute(msg, beatBot, queue);
-            else 
-                command.execute(msg, commands);
+            switch (command.name) {
+                case "help":
+                    command.execute(msg, commands);
+                    break;
+                default:
+                    command.execute(msg, beatBot, queue);
+                    break;
+            }
         }
     });
 });
@@ -93,7 +97,7 @@ async function executePlay(msg, serverQueue) {
 		try {
 			var connection = await voiceChannel.join();
             queueConstruct.connection = connection;
-            msg.channel.send(`Now playing: ${song.title}`);
+            msg.channel.send(`Now playing: **${song.title}**`);
             if (queueConstruct.songs.length > 0) {
                 await play(msg.guild, queueConstruct.songs[0]);
             } else {
@@ -146,7 +150,7 @@ async function stop(msg, serverQueue) {
 
 async function nowPlaying(msg, serverQueue) {
     if (serverQueue.songs.length > 0) {
-        await msg.channel.send(`Now playing: ${serverQueue.songs[0].title}`);
+        await msg.channel.send(`Now playing: **${serverQueue.songs[0].title}**`);
     } else {
         await msg.channel.send("There is nothing playing right now.");
     }

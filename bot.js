@@ -52,6 +52,8 @@ beatBot.on('message', msg => {
         stop(msg, serverQueue);
     } else if (msg.content.startsWith(`${beatBot.prefix}nowplaying`)) {
         nowPlaying(msg, serverQueue);
+    } else if (msg.content.startsWith(`${beatBot.prefix}queue`)) {
+        checkCurrentQueue(msg, serverQueue);
     } else {
         return;
     }
@@ -109,7 +111,7 @@ async function executePlay(msg, serverQueue) {
 			msg.channel.send(err);
 		}
 	} else {
-        await msg.channel.send(`The following video has been added to the queue: ${song.title}`);
+        await msg.channel.send(`The following video has been added to the queue: **${song.title}**`);
         serverQueue.songs.push(song); 
 	}
 
@@ -122,7 +124,7 @@ async function skip(msg, serverQueue) {
        await serverQueue.connection.dispatcher.end();
     } catch (e) {
         console.log(e);
-        await msg.channel.send(`Video ${serverQueue.songs[0].title} skipped.`);
+        await msg.channel.send(`Video: **${serverQueue.songs[0].title}** skipped.`);
         serverQueue.songs.shift();
     }
 }
@@ -156,6 +158,18 @@ async function nowPlaying(msg, serverQueue) {
     }
 }
 
+async function checkCurrentQueue(msg, serverQueue) {
+    if (serverQueue.songs.length > 0) {
+        let count = 1;
+        await serverQueue.songs.forEach((item) => {
+            msg.channel.send(`${count} - **${item.title}**`);
+            count++;
+        });
+    } else {
+        await msg.channel.send("The queue is currently empty.");
+    }
+}
+
 async function play(guild, song) {
 	const serverQueue = await queue.get(guild.id);
 
@@ -163,7 +177,8 @@ async function play(guild, song) {
         serverQueue.voiceChannel.leave();
         queue.delete(guild.id);
 		return;
-	}
+    }
+    
     try { 
         const dispatcher = await serverQueue.voiceChannel.connection.playStream(ytdl(song.url))
 		.on('end', () => {
@@ -178,8 +193,13 @@ async function play(guild, song) {
 		.on('error', error => {
             console.log(error);
         });
+
         dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+
     } catch (error) {
-        msg.guild.defaultChannel.send(error);
+        if (error.message === undefined)
+            console.log(error);
+        else 
+            console.log(error.message);
     }
 }

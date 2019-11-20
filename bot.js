@@ -211,7 +211,7 @@ async function play(guild, song) {
     try { 
         const dispatcher = await serverQueue.voiceChannel.connection.playStream(ytdl(song.url))
 		.on('end', () => {
-            console.log('Music ended!');
+            console.log('Song ended!');
 
             if (!isRepeating)
                 serverQueue.songs.shift();

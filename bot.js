@@ -133,7 +133,9 @@ async function executePlay(msg, serverQueue) {
 async function skip(msg, serverQueue) {
 	if (!msg.member.voiceChannel) return msg.reply('you have to be in a voice channel to stop the queue!');
     if (!serverQueue) return msg.reply('there is no video I can skip.');
+
     try {
+       isRepeating = false;
        await serverQueue.connection.dispatcher.end();
     } catch (e) {
         console.error(beatBotUtils.treatErrorMessage(error));
@@ -187,13 +189,13 @@ async function repeatCurrentSong(msg, serverQueue) {
     if(serverQueue.songs.length > 0) {
         if(!isRepeating) {
             isRepeating = true;
-            await msg.channel.send("Repeating the current song.");
+            await msg.reply("repeating the current song.");
         } else {
             isRepeating = false;
-            await msg.channel.send("Returned to the normal queue.");
+            await msg.reply("returned to the normal queue.");
         }
     } else {
-        await msg.channel.send("There is no song playing for me to repeat it.");
+        await msg.reply("there is no song playing for me to repeat.");
     }
 }
 

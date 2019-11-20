@@ -1,3 +1,6 @@
+//GLOBAL VARIABLES-----------------------------------------
+//Require modules and constants
+
 const { Client } = require('discord.js');
 const fs = require('fs');
 const token = require('./authtoken');
@@ -7,6 +10,13 @@ const queue = new Map();
 beatBot.prefix = "&";
 const commandFiles = fs.readdirSync('./commands');
 const commands = [];
+const beatBotUtils = require('./commands/utils');
+
+//End Require modules and constants
+
+//Vars
+var isRepeating = false;
+//End Vars
 for (let i = 0; i < commandFiles.length; i++) {
     commands.push(require(`./commands/${commandFiles[i]}`));
 }
@@ -54,6 +64,8 @@ beatBot.on('message', msg => {
         nowPlaying(msg, serverQueue);
     } else if (msg.content.startsWith(`${beatBot.prefix}queue`)) {
         checkCurrentQueue(msg, serverQueue);
+    } else if (msg.content.startsWith(`${beatBot.prefix}repeat`)) {
+        repeatCurrentSong(msg, serverQueue);
     } else {
         return;
     }
@@ -74,7 +86,8 @@ async function executePlay(msg, serverQueue) {
     try {
         songInfo = await ytdl.getInfo(args[1]);
     } catch (error) {
-        msg.channel.send(`The requested video cannot be played because I received the following error from the YouTube API: "${error.message}"`);
+        console.error(beatBotUtils.treatErrorMessage(error));
+        msg.channel.send(`The requested video cannot be played because I received the following error from the YouTube API: "${beatBotUtils.treatErrorMessage(error)}"`);
         return;
     }
 
@@ -123,7 +136,7 @@ async function skip(msg, serverQueue) {
     try {
        await serverQueue.connection.dispatcher.end();
     } catch (e) {
-        console.log(e);
+        console.error(beatBotUtils.treatErrorMessage(error));
         await msg.channel.send(`Video: **${serverQueue.songs[0].title}** skipped.`);
         serverQueue.songs.shift();
     }
@@ -170,6 +183,20 @@ async function checkCurrentQueue(msg, serverQueue) {
     }
 }
 
+async function repeatCurrentSong(msg, serverQueue) {
+    if(serverQueue.songs.length > 0) {
+        if(!isRepeating) {
+            isRepeating = true;
+            await msg.channel.send("Repeating the current song.");
+        } else {
+            isRepeating = false;
+            await msg.channel.send("Returned to the normal queue.");
+        }
+    } else {
+        await msg.channel.send("There is no song playing for me to repeat it.");
+    }
+}
+
 async function play(guild, song) {
 	const serverQueue = await queue.get(guild.id);
 
@@ -183,7 +210,10 @@ async function play(guild, song) {
         const dispatcher = await serverQueue.voiceChannel.connection.playStream(ytdl(song.url))
 		.on('end', () => {
             console.log('Music ended!');
-            serverQueue.songs.shift();
+
+            if (!isRepeating)
+                serverQueue.songs.shift();
+            
             if (serverQueue.songs.length > 0) {
                 play(guild, serverQueue.songs[0]);
             } else {
@@ -197,9 +227,6 @@ async function play(guild, song) {
         dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
 
     } catch (error) {
-        if (error.message === undefined)
-            console.log(error);
-        else 
-            console.log(error.message);
+        console.error(beatBotUtils.treatErrorMessage(error));
     }
 }

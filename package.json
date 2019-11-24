@@ -4,7 +4,7 @@
   "description": "A bot for streaming youtube videos",
   "main": "bot.js",
   "scripts": {
-    "test": "test",
+    "test": "jest",
     "start": "nodemon bot.js"
   },
   "author": "Ruan Montelo (JustAn0therDev)",
@@ -27,5 +27,8 @@
     "opusscript": "0.0.6",
     "rebuild": "^0.1.2",
     "ytdl-core": "^0.29.7"
+  },
+  "devDependencies": {
+    "jest": "^24.9.0"
   }
 }

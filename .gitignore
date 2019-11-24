@@ -1,3 +1,4 @@
 node_modules
-authtoken.js
+APIs/authtoken.js
+APIs/apikey.js
 launch.json

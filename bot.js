@@ -3,7 +3,7 @@
 
 const { Client } = require('discord.js');
 const fs = require('fs');
-const token = require('./authtoken');
+const token = require('./Configs/authtoken');
 const ytdl = require('ytdl-core'); 
 const beatBot = new Client();
 const queue = new Map();
@@ -49,7 +49,7 @@ beatBot.on('message', msg => {
 
 	if (msg.content.startsWith(`${beatBot.prefix}play`)) {
         const args = msg.content.split(' ');
-        if (!args[1]) return msg.reply(`you must send me a link for me to play the video`);
+        if (!args[1]) return msg.reply('you must specify a link or search for me to play a video!');
 		executePlay(msg, serverQueue);
 	} else if (msg.content.startsWith(`${beatBot.prefix}skip`)) {   
 		skip(msg, serverQueue);

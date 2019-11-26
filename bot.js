@@ -1,22 +1,41 @@
 //GLOBAL VARIABLES-----------------------------------------
 //Require modules and constants
 
+//Discord.js client module
 const { Client } = require('discord.js');
+
+//Fs required for managing decoupled files.
 const fs = require('fs');
-const token = require('./Configs/authtoken');
+
+//Token and API configurations.
+const token = require('./APIs/authtoken');
+const apiKey = require('./APIs/apikey');
+const axiosConfig = require('./APIs/axiosConfig');
+
+//Axios instance and configurating the external API's endpoint.
+const axios = require('axios');
+axios.default.create(axiosConfig);
+
+//Youtube Downloader.
 const ytdl = require('ytdl-core'); 
+//Instance of the discord client module.
 const beatBot = new Client();
-const queue = new Map();
-beatBot.prefix = "&";
-const commandFiles = fs.readdirSync('./commands');
-const commands = [];
+
+//Utilities module.
 const beatBotUtils = require('./commands/utils');
 
-//End Require modules and constants
+//Song queue.
+const queue = new Map();
+beatBot.prefix = "&";
 
-//Vars
+const commandFiles = fs.readdirSync('./commands');
+const commands = [];
+//End Require modules and constants.
+
+//Global vars when checking certain statuses.
 var isRepeating = false;
-//End Vars
+//End global vars.
+
 for (let i = 0; i < commandFiles.length; i++) {
     commands.push(require(`./commands/${commandFiles[i]}`));
 }
@@ -73,21 +92,28 @@ beatBot.on('message', msg => {
 
 async function executePlay(msg, serverQueue) {
     const args = msg.content.split(' ');
-    var songInfo;
-	const voiceChannel = msg.member.voiceChannel;
-    if (!voiceChannel) return msg.reply('you need to be in a voice channel to play a video.');
+    var songInfo = {};
+	// const voiceChannel = msg.member.voiceChannel;
+    // if (!voiceChannel) return msg.reply('you need to be in a voice channel to play a video.');
     
-    const permissions = voiceChannel.permissionsFor(msg.client.user);
+    // const permissions = voiceChannel.permissionsFor(msg.client.user);
     
-	if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
-		return msg.reply('I do not have the permission to speak or join the current voice channel.');
-    }
+	// if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
+	// 	return msg.reply('I do not have the permission to speak or join the current voice channel.');
+    // }
 
     try {
-        songInfo = await ytdl.getInfo(args[1]);
+        if (args[1].includes('https://')) 
+            songInfo = await ytdl.getInfo(args[1]);
+        else {
+            args.shift();
+            //The YouTube API only accepts the space characters as '+' on it's query parameters
+            songInfo = await searchForYoutubeVideo(args.join('+')).then((response) => { result = response }, (error) => beatBotUtils.treatErrorMessage(error));
+        }
+
     } catch (error) {
         console.error(beatBotUtils.treatErrorMessage(error));
-        msg.channel.send(`The requested video cannot be played because I received the following error from the YouTube API: "${beatBotUtils.treatErrorMessage(error)}"`);
+        msg.channel.send(`The requested video cannot be played because I bumped into the following error: "${beatBotUtils.treatErrorMessage(error)}"`);
         return;
     }
 
@@ -197,6 +223,27 @@ async function repeatCurrentSong(msg, serverQueue) {
     } else {
         await msg.reply("there is no song playing for me to repeat.");
     }
+}
+
+async function searchForYoutubeVideo(search) {
+    await axios.default.get('https://www.googleapis.com/youtube/v3/search', {
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        params: {
+            key: apiKey,
+            part: 'snippet',
+            type: 'video',
+            maxResults: 10,
+            q: search
+        }
+    }).then((res) => {
+        const { data } = res;
+        return data;
+    }).catch((e) => {
+        return beatBotUtils.treatErrorMessage(e);
+    });
 }
 
 async function play(guild, song) {

@@ -1,7 +1,8 @@
 //GLOBAL VARIABLES-----------------------------------------
 //Require modules and constants
 
-//Discord.js client module
+//Discord.js client module and instance.
+const Discord = require('discord.js');
 const { Client } = require('discord.js');
 
 //Fs required for managing decoupled files.
@@ -34,6 +35,7 @@ const commands = [];
 
 //Global vars when checking certain statuses.
 var isRepeating = false;
+var currentYouTubeVideoList = {};
 //End global vars.
 
 for (let i = 0; i < commandFiles.length; i++) {
@@ -93,22 +95,43 @@ beatBot.on('message', msg => {
 async function executePlay(msg, serverQueue) {
     const args = msg.content.split(' ');
     var songInfo = {};
-	// const voiceChannel = msg.member.voiceChannel;
-    // if (!voiceChannel) return msg.reply('you need to be in a voice channel to play a video.');
+
+	const voiceChannel = msg.member.voiceChannel;
+    if (!voiceChannel) return msg.reply('you need to be in a voice channel to play a video.');
     
-    // const permissions = voiceChannel.permissionsFor(msg.client.user);
+    const permissions = voiceChannel.permissionsFor(msg.client.user);
     
-	// if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
-	// 	return msg.reply('I do not have the permission to speak or join the current voice channel.');
-    // }
+	if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
+		return msg.reply('I do not have the permission to speak or join the current voice channel.');
+    }
 
     try {
         if (args[1].includes('https://')) 
             songInfo = await ytdl.getInfo(args[1]);
         else {
+
+            let embedSearchResultsList = new Discord.RichEmbed()
+            .setColor('#10B631')
+            .setTitle('These are the videos I found!')
+            .setDescription('Take a look at the videos I found and choose one!');
             args.shift();
+
             //The YouTube API only accepts the space characters as '+' on it's query parameters
-            songInfo = await searchForYoutubeVideo(args.join('+')).then((response) => { result = response }, (error) => beatBotUtils.treatErrorMessage(error));
+            await searchForYoutubeVideo(msg, args.join('+')).then(response => response, (error) => beatBotUtils.treatErrorMessage(error));
+
+            currentYouTubeVideoList.forEach((item) => {
+                embedSearchResultsList.addField(`${currentYouTubeVideoList.indexOf(item) + 1} - ${item.snippet.title}`, false);
+            });
+
+            await msg.channel.send(embedSearchResultsList).then(async () => {
+                await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 10000 }).then(async collected => {
+                        songInfo = await ytdl.getInfo(`https://youtube.com/watch?v=${currentYouTubeVideoList[collected.first().content - 1].id.videoId}`)
+                    })
+                    .catch((collected) => {
+                        msg.channel.send("Couldn't find the requested video on the list.");
+                        return false;
+                    });
+            });
         }
 
     } catch (error) {
@@ -116,44 +139,43 @@ async function executePlay(msg, serverQueue) {
         msg.channel.send(`The requested video cannot be played because I bumped into the following error: "${beatBotUtils.treatErrorMessage(error)}"`);
         return;
     }
+    if (songInfo.title !== undefined && songInfo.video_url !== undefined) {
+        const song = {
+            title: songInfo.title,
+            url: songInfo.video_url,
+        };
+        //It checks if serverQueue doesn't have an undefined or null value and checks if it has songs in its queue.
+        if (!serverQueue || serverQueue.songs.length === 0) {
+            const queueConstruct = {
+                textChannel: msg.channel,
+                voiceChannel: voiceChannel,
+                connection: null,
+                songs: [],
+                volume: 5,
+                playing: true
+            };
+            queue.set(msg.guild.id, queueConstruct);
+            queueConstruct.songs.push(song);
 
-	const song = {
-		title: songInfo.title,
-		url: songInfo.video_url,
-	};
-
-    //It checks if serverQueue doesn't have an undefined or null value and checks if it has songs in its queue.
-	if (!serverQueue || serverQueue.songs.length === 0) {
-		const queueConstruct = {
-			textChannel: msg.channel,
-			voiceChannel: voiceChannel,
-			connection: null,
-			songs: [],
-			volume: 5,
-			playing: true
-		};
-		queue.set(msg.guild.id, queueConstruct);
-        queueConstruct.songs.push(song);
-
-		try {
-			var connection = await voiceChannel.join();
-            queueConstruct.connection = connection;
-            msg.channel.send(`Now playing: **${song.title}**`);
-            if (queueConstruct.songs.length > 0) {
-                await play(msg.guild, queueConstruct.songs[0]);
-            } else {
-                await msg.guild.voiceConnection.channel.leave();
-                msg.reply('Leaving channel!');
+            try {
+                var connection = await voiceChannel.join();
+                queueConstruct.connection = connection;
+                msg.channel.send(`Now playing: **${song.title}**`);
+                if (queueConstruct.songs.length > 0) {
+                    await play(msg.guild, queueConstruct.songs[0]);
+                } else {
+                    await msg.guild.voiceConnection.channel.leave();
+                    msg.reply('Leaving channel!');
+                }
+            } catch (err) {
+                queue.delete(msg.guild.id);
+                msg.channel.send(err);
             }
-		} catch (err) {
-			queue.delete(msg.guild.id);
-			msg.channel.send(err);
-		}
-	} else {
-        await msg.channel.send(`The following video has been added to the queue: **${song.title}**`);
-        serverQueue.songs.push(song); 
-	}
-
+        } else {
+            await msg.channel.send(`The following video has been added to the queue: **${song.title}**`);
+            serverQueue.songs.push(song); 
+        }
+    }
 }
 
 async function skip(msg, serverQueue) {
@@ -225,7 +247,7 @@ async function repeatCurrentSong(msg, serverQueue) {
     }
 }
 
-async function searchForYoutubeVideo(search) {
+async function searchForYoutubeVideo(msg, search) {
     await axios.default.get('https://www.googleapis.com/youtube/v3/search', {
         headers: {
             'Accept': 'application/json',
@@ -238,10 +260,9 @@ async function searchForYoutubeVideo(search) {
             maxResults: 10,
             q: search
         }
-    }).then((res) => {
-        const { data } = res;
-        return data;
-    }).catch((e) => {
+    }).then((res) => { 
+        currentYouTubeVideoList = res.data.items;
+     }).catch((e) => {
         return beatBotUtils.treatErrorMessage(e);
     });
 }

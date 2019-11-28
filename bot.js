@@ -120,7 +120,7 @@ async function executePlay(msg, serverQueue) {
             await searchForYoutubeVideo(msg, args.join('+')).then(response => response, (error) => beatBotUtils.treatErrorMessage(error));
 
             currentYouTubeVideoList.forEach((item) => {
-                embedSearchResultsList.addField(`${currentYouTubeVideoList.indexOf(item) + 1} - ${item.snippet.title}`, false);
+                embedSearchResultsList.addField(`${currentYouTubeVideoList.indexOf(item) + 1} - ${item.snippet.title}`, "----------------");
             });
 
             await msg.channel.send(embedSearchResultsList).then(async () => {
@@ -223,13 +223,19 @@ async function nowPlaying(msg, serverQueue) {
 
 async function checkCurrentQueue(msg, serverQueue) {
     if (serverQueue.songs.length > 0) {
+        let embedMessage = new Discord.RichEmbed()
+        .setTitle('Songs in queue!')
+        .setColor('#10B631')
+        .setDescription('The current video queue!');
         let count = 1;
         await serverQueue.songs.forEach((item) => {
-            msg.channel.send(`${count} - **${item.title}**`);
+            embedMessage.addField(`${count} - **${item.title}**`, "----------------");
             count++;
         });
+
+        msg.channel.send(embedMessage);
     } else {
-        await msg.channel.send("The queue is currently empty.");
+        await msg.reply("the queue is currently empty.");
     }
 }
 

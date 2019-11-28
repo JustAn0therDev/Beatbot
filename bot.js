@@ -11,11 +11,9 @@ const fs = require('fs');
 //Token and API configurations.
 const token = require('./APIs/authtoken');
 const apiKey = require('./APIs/apikey');
-const axiosConfig = require('./APIs/axiosConfig');
 
 //Axios instance and configurating the external API's endpoint.
 const axios = require('axios');
-axios.default.create(axiosConfig);
 
 //Youtube Downloader.
 const ytdl = require('ytdl-core'); 

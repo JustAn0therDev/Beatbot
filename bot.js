@@ -64,29 +64,46 @@ commands.forEach((command) => {
 beatBot.on('message', msg => {
     if (!msg.content.startsWith(`${beatBot.prefix}`)) return;
     msg.content.trim();
+    let startsWith = msg.content.split(' ')[0];
     const serverQueue = queue.get(msg.guild.id);
 
-	if (msg.content.startsWith(`${beatBot.prefix}play`)) {
-        const args = msg.content.split(' ');
-        if (!args[1]) return msg.reply('you must specify a link or search for me to play a video!');
-		executePlay(msg, serverQueue);
-	} else if (msg.content.startsWith(`${beatBot.prefix}skip`)) {   
-		skip(msg, serverQueue);
-	} else if (msg.content.startsWith(`${beatBot.prefix}pause`)) {
-        pause(msg, serverQueue);
-    } else if (msg.content.startsWith(`${beatBot.prefix}resume`)) {
-        resume(msg, serverQueue);
-        return;
-    } else if (msg.content.startsWith(`${beatBot.prefix}stop`)) {
-        stop(msg, serverQueue);
-    } else if (msg.content.startsWith(`${beatBot.prefix}nowplaying`)) {
-        nowPlaying(msg, serverQueue);
-    } else if (msg.content.startsWith(`${beatBot.prefix}queue`)) {
-        checkCurrentQueue(msg, serverQueue);
-    } else if (msg.content.startsWith(`${beatBot.prefix}repeat`)) {
-        repeatCurrentSong(msg, serverQueue);
-    } else {
-        return;
+    switch (startsWith) {
+        case `${beatBot.prefix}play`:
+            const args = msg.content.split(' ');
+            if (!args[1]) return msg.reply('you must specify a link or search for me to play a video!');
+            executePlay(msg, serverQueue);
+            break;
+
+        case `${beatBot.prefix}skip`:
+            skip(msg, serverQueue);
+            break;
+
+        case `${beatBot.prefix}pause`: 
+            pause(msg, serverQueue);
+            break;
+
+        case `${beatBot.prefix}resume`: 
+            resume(msg, serverQueue);
+            break;
+
+        case `${beatBot.prefix}stop`:
+            stop(msg, serverQueue);
+            break;
+
+        case `${beatBot.prefix}nowplaying`:
+            nowPlaying(msg, serverQueue);
+            break;
+
+        case `${beatBot.prefix}queue`:
+            checkCurrentQueue(msg, serverQueue);
+            break;
+
+        case `${beatBot.prefix}repeat`:
+            repeatCurrentSong(msg, serverQueue);
+            break;
+            
+            default: 
+            break;
     }
 });
 
@@ -115,7 +132,8 @@ async function executePlay(msg, serverQueue) {
             args.shift();
 
             //The YouTube API only accepts the space characters as '+' on it's query parameters
-            await searchForYoutubeVideo(msg, args.join('+')).then(response => response, (error) => beatBotUtils.treatErrorMessage(error));
+            //and the promise receives two functions in case something goes wrong on the API call.
+            await searchForYoutubeVideo(msg, args.join('+')).then(response => response, (error) => { console.log(beatBotUtils.treatErrorMessage(error)) });
 
             currentYouTubeVideoList.forEach((item) => {
                 embedSearchResultsList.addField(`${currentYouTubeVideoList.indexOf(item) + 1} - ${item.snippet.title}`, "----------------");
@@ -283,8 +301,6 @@ async function play(guild, song) {
     try { 
         const dispatcher = await serverQueue.voiceChannel.connection.playStream(ytdl(song.url))
 		.on('end', () => {
-            console.log('Song ended!');
-
             if (!isRepeating)
                 serverQueue.songs.shift();
             

@@ -8,6 +8,9 @@ const { Client } = require('discord.js');
 //Fs required for managing decoupled files.
 const fs = require('fs');
 
+//Requiring the module to manipulate arrays more easily.
+const arrayMove = require('array-move');
+
 //Token and API configurations.
 const token = require('./APIs/authtoken');
 const apiKey = require('./APIs/apikey');
@@ -101,6 +104,10 @@ beatBot.on('message', msg => {
         case `${beatBot.prefix}repeat`:
             repeatCurrentSong(msg, serverQueue);
             break;
+
+        case `${beatBot.prefix}next`:
+            moveItemToFirstInQueue(msg, serverQueue);
+            break;
             
             default: 
             break;
@@ -144,7 +151,7 @@ async function executePlay(msg, serverQueue) {
                     })
                     .catch((promiseRejection) => {
                         msg.channel.send(`Couldn't find the requested video on the list because I bumped into the following error: **${beatBotUtils.treatErrorMessage(promiseRejection)}**`);
-                        return false;
+                        return;
                     });
             });
         }
@@ -210,21 +217,21 @@ async function pause(msg, serverQueue) {
     if(!msg.member.voiceChannel) return msg.reply('you have to be in a voice channel.');
     if (!serverQueue) return msg.reply('there is no video for me to pause.');
     await serverQueue.connection.dispatcher.pause();
-    msg.channel.send('Video paused.');
+    msg.reply('video paused.');
 }
 
 async function resume(msg, serverQueue) {
     if(!msg.member.voiceChannel) return msg.reply('you have to be in a voice channel.');
     if (!serverQueue) return msg.reply('there is no video for me to resume.');
     await serverQueue.connection.dispatcher.resume();
-    msg.channel.send('Video resumed.');
+    msg.reply('video resumed.');
 }
 
 async function stop(msg, serverQueue) {
 	if (!msg.member.voiceChannel) return msg.reply('you have to be in a voice channel to stop the queue!');
     serverQueue.songs = [];
     await serverQueue.connection.dispatcher.end();
-    msg.channel.send('Queue stopped and cleaned.');
+    msg.reply('queue stopped and cleaned.');
 }
 
 async function nowPlaying(msg, serverQueue) {
@@ -284,6 +291,29 @@ async function searchForYoutubeVideo(msg, search) {
         currentYouTubeVideoList = res.data.items;
      }).catch((e) => {
         return beatBotUtils.treatErrorMessage(e);
+    });
+}
+
+async function moveItemToFirstInQueue(msg, serverQueue) {
+    await msg.channel.send(embedMessage).then(async () => {
+        await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 10000 }).then(async collected => {
+                let indexToMove = collected.first().content;
+                if (serverQueue !== undefined && serverQueue.songs.length > 1 && serverQueue.songs.length <= indexToMove && indexToMove !== 0) {
+                    let count = 1;
+                    await serverQueue.songs.forEach((item) => {
+                        embedMessage.addField(`${count} - **${item.title}**`, "----------------");
+                        count++;
+                    });
+                    msg.channel.send(embedMessage);
+                    arrayMove.mutate(serverQueue.songs, 1, indexToMove);
+                    msg.reply('the requested video has been moved to the top of the list!');
+                } else {
+                    msg.reply("I can't move the video you request because the queue is empty, has only one song in it or the requested video does not exist in the queue.");
+                }
+            })
+            .catch((error) => {
+                msg.channel.send(`Couldn't find the requested video on the list because I bumped into the following error: **${beatBotUtils.treatErrorMessage(error)}**`);
+            });
     });
 }
 

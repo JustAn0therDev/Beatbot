@@ -20,6 +20,7 @@ module.exports = {
         .addField('Name: nowplaying \nDescription: Shows the currently playing video title.', "----------------")
         .addField('Name: queue \nDescription: Shows the queue of pending videos.', "----------------")
         .addField('Name: repeat \nDescription: Repeats the currently playing video. Use it again to deactivate it.', "----------------")
+        .addField('Name: next \nDescription: Put a video you want to hear to the top of the currently playing queue.', "----------------")
         msg.channel.send(embedMessage);
     }
 }

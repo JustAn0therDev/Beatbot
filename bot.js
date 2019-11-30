@@ -47,7 +47,7 @@ commands.forEach((command) => {
         if(msg.content.startsWith(`${beatBot.prefix}${command.name}`) && !msg.author.bot) {
             switch (command.name) {
                 case "help":
-                    command.execute(msg, commands);
+                    command.execute(msg, commands, beatBot.prefix);
                     break;
                 default:
                     command.execute(msg, beatBot, queue);

@@ -124,7 +124,6 @@ async function executePlay(msg, serverQueue) {
         if (args[1].includes('https://')) 
             songInfo = await ytdl.getInfo(args[1]);
         else {
-
             let embedSearchResultsList = new Discord.RichEmbed()
             .setColor('#10B631')
             .setTitle('These are the videos I found!')
@@ -143,13 +142,12 @@ async function executePlay(msg, serverQueue) {
                 await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 10000 }).then(async collected => {
                         songInfo = await ytdl.getInfo(`https://youtube.com/watch?v=${currentYouTubeVideoList[collected.first().content - 1].id.videoId}`)
                     })
-                    .catch((collected) => {
-                        msg.channel.send("Couldn't find the requested video on the list.");
+                    .catch((promiseRejection) => {
+                        msg.channel.send(`Couldn't find the requested video on the list because I bumped into the following error: **${beatBotUtils.treatErrorMessage(promiseRejection)}**`);
                         return false;
                     });
             });
         }
-
     } catch (error) {
         console.error(beatBotUtils.treatErrorMessage(error));
         msg.channel.send(`The requested video cannot be played because I bumped into the following error: "${beatBotUtils.treatErrorMessage(error)}"`);

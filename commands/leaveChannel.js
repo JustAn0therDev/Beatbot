@@ -1,6 +1,6 @@
 module.exports = {
     name: 'leave',
-    description: 'Leaves the currently connected voice channel',
+    description: 'Leaves the currently connected voice channel.',
     async execute(msg) {
         if (msg.guild.voiceConnection) {
           await msg.guild.voiceConnection.channel.leave();

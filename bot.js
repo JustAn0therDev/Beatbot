@@ -43,6 +43,15 @@ for (let i = 0; i < commandFiles.length; i++) {
 }
 beatBot.login(AUTH_TOKEN);
 
+//This function prevents the Heroku's Dyno container from turning off due to inactivity. It should log the bot's latency on the console every 16~17 minutes.
+const pingConsoleEvery16Minutes = () => {
+    setInterval(() => {
+        console.log(beatBot.ping);
+    }, 1000000);
+}
+
+pingConsoleEvery16Minutes();
+
 commands.forEach((command) => {
     beatBot.on('message', (msg) => {
         if(msg.content.startsWith(`${beatBot.prefix}${command.name}`) && !msg.author.bot) {
@@ -350,8 +359,3 @@ async function play(guild, song) {
         console.error(beatBotUtils.treatErrorMessage(error));
     }
 }
-
-//This function prevents the Heroku's Dyno container from turning off due to inactivity. It should log the bot's latency on the console every 16~17 minutes.
-setInterval(() => {
-    console.log(beatBot.ping);
-}, 1000000)

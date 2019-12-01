@@ -43,15 +43,6 @@ for (let i = 0; i < commandFiles.length; i++) {
 }
 beatBot.login(AUTH_TOKEN);
 
-//This function prevents the Heroku's Dyno container from turning off due to inactivity. It should log the bot's latency on the console every 16~17 minutes.
-const pingConsoleEveryMinute = () => {
-    setInterval(() => {
-        console.log(beatBot.ping);
-    }, 30000);
-}
-
-pingConsoleEveryMinute();
-
 commands.forEach((command) => {
     beatBot.on('message', (msg) => {
         if(msg.content.startsWith(`${beatBot.prefix}${command.name}`) && !msg.author.bot) {
@@ -153,7 +144,7 @@ async function executePlay(msg, serverQueue) {
             });
 
             await msg.channel.send(embedSearchResultsList).then(async () => {
-                await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 15000 }).then(async collected => {
+                await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 5000 }).then(async collected => {
                         let videoLink = currentYouTubeVideoList[collected.first().content - 1].id.videoId;
                         songInfo = await ytdl.getInfo(`https://youtube.com/watch?v=${videoLink}`);
                     })
@@ -168,7 +159,7 @@ async function executePlay(msg, serverQueue) {
         msg.channel.send(`The requested video cannot be played because I bumped into the following error: "${beatBotUtils.treatErrorMessage(error)}"`);
         return;
     }
-    if (songInfo.title !== undefined && songInfo.video_url !== undefined) {
+    if (songInfo.title && songInfo.video_url) {
         const song = {
             title: songInfo.title,
             url: songInfo.video_url,
@@ -243,7 +234,7 @@ async function stop(msg, serverQueue) {
 }
 
 async function nowPlaying(msg, serverQueue) {
-    if (!serverQueue && serverQueue.songs.length > 0) {
+    if (serverQueue && serverQueue.songs.length > 0) {
         await msg.channel.send(`Now playing: **${serverQueue.songs[0].title}**`);
     } else {
         await msg.channel.send("There is nothing playing right now.");
@@ -251,7 +242,7 @@ async function nowPlaying(msg, serverQueue) {
 }
 
 async function checkCurrentQueue(msg, serverQueue) {
-    if (!serverQueue && serverQueue.songs.length > 0) {
+    if (serverQueue && serverQueue.songs.length > 0) {
         let embedMessage = new Discord.RichEmbed()
         .setTitle('Songs in queue!')
         .setColor('#10B631')
@@ -269,7 +260,7 @@ async function checkCurrentQueue(msg, serverQueue) {
 }
 
 async function repeatCurrentSong(msg, serverQueue) {
-    if(!serverQueue && serverQueue.songs.length > 0) {
+    if(serverQueue && serverQueue.songs.length > 0) {
         if(!isRepeating) {
             isRepeating = true;
             await msg.reply("repeating the current song.");

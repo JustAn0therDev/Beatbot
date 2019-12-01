@@ -250,7 +250,7 @@ async function nowPlaying(msg, serverQueue) {
 }
 
 async function checkCurrentQueue(msg, serverQueue) {
-    if (serverQueue.songs.length > 0) {
+    if (!serverQueue && serverQueue.songs.length > 0) {
         let embedMessage = new Discord.RichEmbed()
         .setTitle('Songs in queue!')
         .setColor('#10B631')
@@ -268,7 +268,7 @@ async function checkCurrentQueue(msg, serverQueue) {
 }
 
 async function repeatCurrentSong(msg, serverQueue) {
-    if(serverQueue.songs.length > 0) {
+    if(!serverQueue && serverQueue.songs.length > 0) {
         if(!isRepeating) {
             isRepeating = true;
             await msg.reply("repeating the current song.");
@@ -288,7 +288,7 @@ async function searchForYoutubeVideo(msg, search) {
             'Content-Type': 'application/json'
         },
         params: {
-            key: API_KEY.toString(),
+            key: API_KEY,
             part: 'snippet',
             type: 'video',
             maxResults: 10,
@@ -309,7 +309,7 @@ async function moveItemToFirstInQueue(msg, serverQueue) {
     await msg.channel.send(embedMessage).then(async () => {
         await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 10000 }).then(async collected => {
                 let indexToMove = collected.first().content;
-                if (serverQueue !== undefined && serverQueue.songs.length > 1 && serverQueue.songs.length <= indexToMove && indexToMove !== 0) {
+                if (!serverQueue && serverQueue.songs.length > 1 && serverQueue.songs.length <= indexToMove && indexToMove !== 0) {
                     let count = 1;
                     await serverQueue.songs.forEach((item) => {
                         embedMessage.addField(`${count} - **${item.title}**`, "----------------");

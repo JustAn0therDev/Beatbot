@@ -5,7 +5,7 @@
   "main": "bot.js",
   "scripts": {
     "test": "jest",
-    "start": "nodemon bot.js"
+    "start": "nodemon bot.js 8080"
   },
   "engines": {
     "npm": "6.4.1",

@@ -227,6 +227,7 @@ async function resume(msg, serverQueue) {
 }
 
 async function stop(msg, serverQueue) {
+    if(!serverQueue) return msg.reply("there are no songs in queue for me to clean and stop it.")
 	if (!msg.member.voiceChannel) return msg.reply('you have to be in a voice channel to stop the queue!');
     serverQueue.songs = [];
     await serverQueue.connection.dispatcher.end();

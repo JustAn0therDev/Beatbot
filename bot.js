@@ -141,20 +141,21 @@ async function executePlay(msg, serverQueue) {
             let embedSearchResultsList = new Discord.RichEmbed()
             .setColor('#10B631')
             .setTitle('These are the videos I found!')
-            .setDescription('Take a look at the videos I found and choose one!');
+            .setDescription("Take a look at the videos I found and choose one by typing it's index number!");
             args.shift();
 
             //The YouTube API only accepts the space characters as '+' on it's query parameters
             //and the promise receives two functions in case something goes wrong on the API call.
-            await searchForYoutubeVideo(msg, args.join('+')).then(response => response, (error) => { console.log(beatBotUtils.treatErrorMessage(error)) });
+            await searchForYoutubeVideo(msg, args.join('+')).then((response) => { response }, (error) => { console.log(beatBotUtils.treatErrorMessage(error)) });
 
-            await currentYouTubeVideoList.forEach((item) => {
+            currentYouTubeVideoList.forEach((item) => {
                 embedSearchResultsList.addField(`${currentYouTubeVideoList.indexOf(item) + 1} - ${item.snippet.title}`, "----------------");
             });
 
             await msg.channel.send(embedSearchResultsList).then(async () => {
                 await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 15000 }).then(async collected => {
-                        songInfo = await ytdl.getInfo(`https://youtube.com/watch?v=${currentYouTubeVideoList[collected.first().content - 1].id.videoId}`);
+                        let videoLink = currentYouTubeVideoList[collected.first().content - 1].id.videoId;
+                        songInfo = await ytdl.getInfo(`https://youtube.com/watch?v=${videoLink}`);
                     })
                     .catch((promiseRejection) => {
                         msg.channel.send(`Couldn't find the requested video on the list because I bumped into the following error: **${beatBotUtils.treatErrorMessage(promiseRejection)}**`);

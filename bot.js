@@ -295,6 +295,10 @@ async function searchForYoutubeVideo(msg, search) {
 }
 
 async function moveItemToFirstInQueue(msg, serverQueue) {
+    let embedMessage = new Discord.RichEmbed()
+    .setTitle('Songs in queue!')
+    .setColor('#10B631')
+    .setDescription('The current video queue. Choose a song for me to prioritize!');
     await msg.channel.send(embedMessage).then(async () => {
         await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 10000 }).then(async collected => {
                 let indexToMove = collected.first().content;

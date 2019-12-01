@@ -26,12 +26,14 @@
     "ffmpeg": "0.0.4",
     "ffmpeg-binaries": "^4.0.0",
     "libsodium-wrappers": "^0.7.5",
+    "mkdirp": "^0.5.1",
     "node-gyp": "^5.0.4",
     "node-opus": "^0.2.7",
     "nodemon": "^1.19.2",
     "opus": "0.0.0",
     "opusscript": "0.0.6",
     "rebuild": "^0.1.2",
+    "safe-buffer": "^5.1.2",
     "ytdl-core": "^0.29.7"
   },
   "devDependencies": {

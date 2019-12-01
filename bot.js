@@ -149,13 +149,14 @@ async function executePlay(msg, serverQueue) {
             await searchForYoutubeVideo(msg, args.join('+')).then(response => response, (error) => { console.log(beatBotUtils.treatErrorMessage(error)) });
 
             await currentYouTubeVideoList.forEach((item) => {
-                embedSearchResultsList.addField(`${currentYouTubeVideoList.indexOf(item) + 1} - ${item.snippet.title}`, "----------------");
+                embedSearchResultsList.addField(`${currentYouTubeVideoList.indexOf(item) + 1} - ${item.title}`, "----------------");
             });
 
             await msg.channel.send(embedSearchResultsList).then(async () => {
                 await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 15000 }).then(async collected => {
-                        songInfo = await ytdl.getInfo(`https://youtube.com/watch?v=${currentYouTubeVideoList[collected.first().content - 1].id.videoId}`);
+                        songInfo = await ytdl.getInfo(`https://youtube.com/watch?v=${currentYouTubeVideoList[collected.first().content - 1].videoId}`);
                         console.log(songInfo);
+                        console.log(`https://youtube.com/watch?v=${currentYouTubeVideoList[collected.first().content - 1].videoId}`);
                     })
                     .catch((promiseRejection) => {
                         msg.channel.send(`Couldn't find the requested video on the list because I bumped into the following error: **${beatBotUtils.treatErrorMessage(promiseRejection)}**`);
@@ -168,7 +169,7 @@ async function executePlay(msg, serverQueue) {
         msg.channel.send(`The requested video cannot be played because I bumped into the following error: "${beatBotUtils.treatErrorMessage(error)}"`);
         return;
     }
-    if (songInfo.title !== undefined && songInfo.video_url !== undefined) {
+    if (!songInfo.title && !songInfo.video_url) {
         const song = {
             title: songInfo.title,
             url: songInfo.video_url,
@@ -296,7 +297,12 @@ async function searchForYoutubeVideo(msg, search) {
             q: search
         }
     }).then(async (res) => { 
-        currentYouTubeVideoList = await res.data.items;
+        currentYouTubeVideoList = await res.data.items.map(element => {
+            return {
+                title: element.snippet.title,
+                videoId: element.id.videoId
+            }
+        })
      }).catch((e) => {
         console.log(beatBotUtils.treatErrorMessage(e));
         return beatBotUtils.treatErrorMessage(e);

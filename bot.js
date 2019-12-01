@@ -350,3 +350,8 @@ async function play(guild, song) {
         console.error(beatBotUtils.treatErrorMessage(error));
     }
 }
+
+//This function prevents the Heroku's Dyno container from turning off due to inactivity. It should log the bot's latency on the console every 16~17 minutes.
+setInterval(() => {
+    console.log(beatBot.ping);
+}, 1000000)

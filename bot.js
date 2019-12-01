@@ -149,12 +149,12 @@ async function executePlay(msg, serverQueue) {
             await searchForYoutubeVideo(msg, args.join('+')).then(response => response, (error) => { console.log(beatBotUtils.treatErrorMessage(error)) });
 
             await currentYouTubeVideoList.forEach((item) => {
-                embedSearchResultsList.addField(`${currentYouTubeVideoList.indexOf(item) + 1} - ${item.title}`, "----------------");
+                embedSearchResultsList.addField(`${currentYouTubeVideoList.indexOf(item) + 1} - ${item.snippet.title}`, "----------------");
             });
 
             await msg.channel.send(embedSearchResultsList).then(async () => {
                 await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 15000 }).then(async collected => {
-                        songInfo = await ytdl.getInfo(`https://youtube.com/watch?v=${currentYouTubeVideoList[collected.first().content - 1].videoId}`);
+                        songInfo = await ytdl.getInfo(`https://youtube.com/watch?v=${currentYouTubeVideoList[collected.first().content - 1].id.videoId}`);
                     })
                     .catch((promiseRejection) => {
                         msg.channel.send(`Couldn't find the requested video on the list because I bumped into the following error: **${beatBotUtils.treatErrorMessage(promiseRejection)}**`);
@@ -167,7 +167,7 @@ async function executePlay(msg, serverQueue) {
         msg.channel.send(`The requested video cannot be played because I bumped into the following error: "${beatBotUtils.treatErrorMessage(error)}"`);
         return;
     }
-    if (!songInfo.title && !songInfo.video_url) {
+    if (songInfo.title !== undefined && songInfo.video_url !== undefined) {
         const song = {
             title: songInfo.title,
             url: songInfo.video_url,
@@ -190,7 +190,7 @@ async function executePlay(msg, serverQueue) {
                 queueConstruct.connection = connection;
                 msg.channel.send(`Now playing: **${song.title}**`);
                 if (queueConstruct.songs.length > 0) {
-                    await play(msg.guild, queueConstruct.songs[0]);
+                    play(msg.guild, queueConstruct.songs[0]);
                 } else {
                     await msg.guild.voiceConnection.channel.leave();
                     msg.reply('Leaving channel!');
@@ -295,12 +295,7 @@ async function searchForYoutubeVideo(msg, search) {
             q: search
         }
     }).then(async (res) => { 
-        currentYouTubeVideoList = await res.data.items.map(element => {
-            return {
-                title: element.snippet.title,
-                videoId: element.id.videoId
-            }
-        })
+        currentYouTubeVideoList = await res.data.items;
      }).catch((e) => {
         console.log(beatBotUtils.treatErrorMessage(e));
         return beatBotUtils.treatErrorMessage(e);
@@ -343,12 +338,12 @@ async function play(guild, song) {
 		return;
     }
     const dispatcher = await serverQueue.voiceChannel.connection.playStream(ytdl(song.url))
-    .on('end', async () => {
+    .on('end', () => {
         if (!isRepeating)
             serverQueue.songs.shift();
         
         if (serverQueue.songs.length > 0) {
-            await play(guild, serverQueue.songs[0]);
+            play(guild, serverQueue.songs[0]);
         } else {
             guild.voiceConnection.channel.leave();
         }

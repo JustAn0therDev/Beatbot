@@ -12,8 +12,7 @@ const fs = require('fs');
 const arrayMove = require('array-move');
 
 //Token and API configurations.
-const token = require('./APIs/authtoken');
-const apiKey = require('./APIs/apikey');
+const { API_KEY, AUTH_TOKEN } = require('./config');
 
 //Axios instance and configurating the external API's endpoint.
 const axios = require('axios');
@@ -42,8 +41,7 @@ var currentYouTubeVideoList = {};
 for (let i = 0; i < commandFiles.length; i++) {
     commands.push(require(`./commands/${commandFiles[i]}`));
 }
-
-beatBot.login(token);
+beatBot.login(AUTH_TOKEN);
 
 commands.forEach((command) => {
     beatBot.on('message', (msg) => {
@@ -281,7 +279,7 @@ async function searchForYoutubeVideo(msg, search) {
             'Content-Type': 'application/json'
         },
         params: {
-            key: apiKey,
+            key: API_KEY,
             part: 'snippet',
             type: 'video',
             maxResults: 10,

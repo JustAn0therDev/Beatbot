@@ -294,8 +294,8 @@ async function searchForYoutubeVideo(msg, search) {
             maxResults: 10,
             q: search
         }
-    }).then((res) => { 
-        currentYouTubeVideoList = res.data.items;
+    }).then(async (res) => { 
+        currentYouTubeVideoList = await res.data.items;
      }).catch((e) => {
         return beatBotUtils.treatErrorMessage(e);
     });

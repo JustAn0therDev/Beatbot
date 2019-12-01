@@ -288,7 +288,7 @@ async function searchForYoutubeVideo(msg, search) {
             'Content-Type': 'application/json'
         },
         params: {
-            key: API_KEY,
+            key: API_KEY.toString(),
             part: 'snippet',
             type: 'video',
             maxResults: 10,

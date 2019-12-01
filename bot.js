@@ -45,7 +45,7 @@ beatBot.login(AUTH_TOKEN);
 
 //This function prevents the Heroku's Dyno container from turning off due to inactivity. It should log the bot's latency on the console every 16~17 minutes.
 const pingConsoleEveryMinute = () => {
-    setInterval(() => {
+    setInterval(async () => {
         console.log(beatBot.ping);
     }, 30000);
 }
@@ -167,7 +167,7 @@ async function executePlay(msg, serverQueue) {
         msg.channel.send(`The requested video cannot be played because I bumped into the following error: "${beatBotUtils.treatErrorMessage(error)}"`);
         return;
     }
-    if (songInfo.title !== undefined && songInfo.video_url !== undefined) {
+    if (songInfo.title && songInfo.video_url) {
         const song = {
             title: songInfo.title,
             url: songInfo.video_url,
@@ -242,7 +242,7 @@ async function stop(msg, serverQueue) {
 }
 
 async function nowPlaying(msg, serverQueue) {
-    if (!serverQueue && serverQueue.songs.length > 0) {
+    if (serverQueue && serverQueue.songs.length > 0) {
         await msg.channel.send(`Now playing: **${serverQueue.songs[0].title}**`);
     } else {
         await msg.channel.send("There is nothing playing right now.");
@@ -250,7 +250,7 @@ async function nowPlaying(msg, serverQueue) {
 }
 
 async function checkCurrentQueue(msg, serverQueue) {
-    if (!serverQueue && serverQueue.songs.length > 0) {
+    if (serverQueue && serverQueue.songs.length > 0) {
         let embedMessage = new Discord.RichEmbed()
         .setTitle('Songs in queue!')
         .setColor('#10B631')
@@ -268,7 +268,7 @@ async function checkCurrentQueue(msg, serverQueue) {
 }
 
 async function repeatCurrentSong(msg, serverQueue) {
-    if(!serverQueue && serverQueue.songs.length > 0) {
+    if(serverQueue && serverQueue.songs.length > 0) {
         if(!isRepeating) {
             isRepeating = true;
             await msg.reply("repeating the current song.");
@@ -342,7 +342,7 @@ async function play(guild, song) {
         if (!isRepeating)
             serverQueue.songs.shift();
         
-        if (serverQueue.songs.length > 0) {
+        if (serverQueue && serverQueue.songs.length > 0) {
             play(guild, serverQueue.songs[0]);
         } else {
             guild.voiceConnection.channel.leave();

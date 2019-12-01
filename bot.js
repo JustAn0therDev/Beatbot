@@ -148,7 +148,7 @@ async function executePlay(msg, serverQueue) {
             //and the promise receives two functions in case something goes wrong on the API call.
             await searchForYoutubeVideo(msg, args.join('+')).then(response => response, (error) => { console.log(beatBotUtils.treatErrorMessage(error)) });
 
-            currentYouTubeVideoList.forEach((item) => {
+            await currentYouTubeVideoList.forEach((item) => {
                 embedSearchResultsList.addField(`${currentYouTubeVideoList.indexOf(item) + 1} - ${item.snippet.title}`, "----------------");
             });
 

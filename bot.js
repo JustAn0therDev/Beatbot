@@ -35,7 +35,7 @@ const commands = [];
 
 //Global vars when checking certain statuses.
 var isRepeating = false;
-var currentYouTubeVideoList = {};
+var currentYouTubeVideoList = [];
 //End global vars.
 
 for (let i = 0; i < commandFiles.length; i++) {

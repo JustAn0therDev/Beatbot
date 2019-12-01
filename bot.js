@@ -44,13 +44,13 @@ for (let i = 0; i < commandFiles.length; i++) {
 beatBot.login(AUTH_TOKEN);
 
 //This function prevents the Heroku's Dyno container from turning off due to inactivity. It should log the bot's latency on the console every 16~17 minutes.
-const pingConsoleEvery16Minutes = () => {
+const pingConsoleEveryMinute = () => {
     setInterval(() => {
         console.log(beatBot.ping);
-    }, 1000000);
+    }, 100000);
 }
 
-pingConsoleEvery16Minutes();
+pingConsoleEveryMinute();
 
 commands.forEach((command) => {
     beatBot.on('message', (msg) => {
@@ -153,7 +153,7 @@ async function executePlay(msg, serverQueue) {
             });
 
             await msg.channel.send(embedSearchResultsList).then(async () => {
-                await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 10000 }).then(async collected => {
+                await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 15000 }).then(async collected => {
                         songInfo = await ytdl.getInfo(`https://youtube.com/watch?v=${currentYouTubeVideoList[collected.first().content - 1].id.videoId}`)
                     })
                     .catch((promiseRejection) => {
@@ -339,12 +339,12 @@ async function play(guild, song) {
     
     try { 
         const dispatcher = await serverQueue.voiceChannel.connection.playStream(ytdl(song.url))
-		.on('end', () => {
+		.on('end', async () => {
             if (!isRepeating)
                 serverQueue.songs.shift();
             
             if (serverQueue.songs.length > 0) {
-                play(guild, serverQueue.songs[0]);
+                await play(guild, serverQueue.songs[0]);
             } else {
                 guild.voiceConnection.channel.leave();
             }

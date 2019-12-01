@@ -7,6 +7,10 @@
     "test": "jest",
     "start": "nodemon bot.js"
   },
+  "engines":{
+    "npm": "6.4.1",
+    "node": "10.15.3"
+  },
   "author": "Ruan Montelo (JustAn0therDev)",
   "license": "ISC",
   "dependencies": {

@@ -155,8 +155,6 @@ async function executePlay(msg, serverQueue) {
             await msg.channel.send(embedSearchResultsList).then(async () => {
                 await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 15000 }).then(async collected => {
                         songInfo = await ytdl.getInfo(`https://youtube.com/watch?v=${currentYouTubeVideoList[collected.first().content - 1].videoId}`);
-                        console.log(songInfo);
-                        console.log(`https://youtube.com/watch?v=${currentYouTubeVideoList[collected.first().content - 1].videoId}`);
                     })
                     .catch((promiseRejection) => {
                         msg.channel.send(`Couldn't find the requested video on the list because I bumped into the following error: **${beatBotUtils.treatErrorMessage(promiseRejection)}**`);

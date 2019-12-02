@@ -300,14 +300,14 @@ async function moveItemToFirstInQueue(msg, serverQueue) {
     .setTitle('Songs in queue!')
     .setColor('#10B631')
     .setDescription('The current video queue. Choose a song for me to prioritize!');
-    if (serverQueue && serverQueue.songs.length > 1) {
+    if (serverQueue && serverQueue.songs.length > 2) {
         let count = 1;
         await serverQueue.songs.forEach((item) => {
             embedMessage.addField(`${count} - **${item.title}**`, "----------------");
             count++;
         });
     } else {
-        msg.reply("I can't move the video you requested because the queue is empty, has only one song in it or the requested video does not exist in the queue.");
+        msg.reply("I can't move the video you requested because the queue is empty, has only one song to the played or the requested video does not exist in the queue.");
         return;
     }
     await msg.channel.send(embedMessage).then(async () => {

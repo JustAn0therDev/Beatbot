@@ -13,4 +13,4 @@ since the ytdl-core depencency seems to be unstable on Unix.
 
 - Make sure you're always executing functions and requesting for external resources asynchronosly, as it can lower performance or break the application's current state.
 
-- As adding things regarding the YouTube video playing side of things, use global variables if they need to be referenced my another discord command.
+- As of adding stuff to the YouTube video playing side of things, use global variables if they need to be referenced by another discord command.

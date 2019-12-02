@@ -144,7 +144,7 @@ async function executePlay(msg, serverQueue) {
             });
 
             await msg.channel.send(embedSearchResultsList).then(async () => {
-                await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 5000 }).then(async collected => {
+                await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 10000 }).then(async collected => {
                         let videoLink = currentYouTubeVideoList[collected.first().content - 1].id.videoId;
                         songInfo = await ytdl.getInfo(`https://youtube.com/watch?v=${videoLink}`);
                     })
@@ -205,7 +205,7 @@ async function skip(msg, serverQueue) {
     try {
        isRepeating = false;
        await serverQueue.connection.dispatcher.end();
-       await msg.channel.send(`Video: **${serverQueue.songs[0].title}** skipped.`);
+       await msg.reply(`video skipped!`);
     } catch (e) {
         console.error(beatBotUtils.treatErrorMessage(error));
         serverQueue.songs.shift();
@@ -227,7 +227,7 @@ async function resume(msg, serverQueue) {
 }
 
 async function stop(msg, serverQueue) {
-    if(!serverQueue) return msg.reply("there are no songs in queue for me to clean and stop it.")
+    if(!serverQueue || (serverQueue && serverQueue.songs.length === 0)) return msg.reply("there are no songs in queue for me to clean and stop it.");
 	if (!msg.member.voiceChannel) return msg.reply('you have to be in a voice channel to stop the queue!');
     serverQueue.songs = [];
     await serverQueue.connection.dispatcher.end();
@@ -300,21 +300,20 @@ async function moveItemToFirstInQueue(msg, serverQueue) {
     .setTitle('Songs in queue!')
     .setColor('#10B631')
     .setDescription('The current video queue. Choose a song for me to prioritize!');
+    if (serverQueue && serverQueue.songs.length > 1) {
+        let count = 1;
+        await serverQueue.songs.forEach((item) => {
+            embedMessage.addField(`${count} - **${item.title}**`, "----------------");
+            count++;
+        });
+    } else {
+        msg.reply("I can't move the video you requested because the queue is empty, has only one song in it or the requested video does not exist in the queue.");
+        return;
+    }
     await msg.channel.send(embedMessage).then(async () => {
         await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 10000 }).then(async collected => {
-                let indexToMove = collected.first().content;
-                if (!serverQueue && serverQueue.songs.length > 1 && serverQueue.songs.length <= indexToMove && indexToMove !== 0) {
-                    let count = 1;
-                    await serverQueue.songs.forEach((item) => {
-                        embedMessage.addField(`${count} - **${item.title}**`, "----------------");
-                        count++;
-                    });
-                    msg.channel.send(embedMessage);
-                    arrayMove.mutate(serverQueue.songs, 1, indexToMove);
-                    msg.reply('the requested video has been moved to the top of the list!');
-                } else {
-                    msg.reply("I can't move the video you request because the queue is empty, has only one song in it or the requested video does not exist in the queue.");
-                }
+                    arrayMove.mutate(serverQueue.songs, 1, collected.first().content);
+                    msg.reply('the requested video has been moved to the top of the list and is going to be played next!');
             })
             .catch((error) => {
                 msg.channel.send(`Couldn't find the requested video on the list because I bumped into the following error: **${beatBotUtils.treatErrorMessage(error)}**`);

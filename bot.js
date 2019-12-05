@@ -213,21 +213,21 @@ async function skip(msg, serverQueue) {
 }
 
 async function pause(msg, serverQueue) {
-    if(!msg.member.voiceChannel) return msg.reply('you have to be in a voice channel.');
+    if (!msg.member.voiceChannel) return msg.reply('you have to be in a voice channel.');
     if (!serverQueue) return msg.reply('there is no video for me to pause.');
     await serverQueue.connection.dispatcher.pause();
     msg.reply('video paused.');
 }
 
 async function resume(msg, serverQueue) {
-    if(!msg.member.voiceChannel) return msg.reply('you have to be in a voice channel.');
+    if (!msg.member.voiceChannel) return msg.reply('you have to be in a voice channel.');
     if (!serverQueue) return msg.reply('there is no video for me to resume.');
     await serverQueue.connection.dispatcher.resume();
     msg.reply('video resumed.');
 }
 
 async function stop(msg, serverQueue) {
-    if(!serverQueue || (serverQueue && serverQueue.songs.length === 0)) return msg.reply("there are no songs in queue for me to clean and stop it.");
+    if (!serverQueue || (serverQueue && serverQueue.songs.length === 0)) return msg.reply("there are no songs in queue for me to clean and stop it.");
 	if (!msg.member.voiceChannel) return msg.reply('you have to be in a voice channel to stop the queue!');
     serverQueue.songs = [];
     await serverQueue.connection.dispatcher.end();
@@ -243,7 +243,11 @@ async function nowPlaying(msg, serverQueue) {
 }
 
 async function checkCurrentQueue(msg, serverQueue) {
-    if (serverQueue && serverQueue.songs.length > 0) {
+    try {
+        if (!serverQueue || serverQueue.songs.length === 0) {
+            return msg.reply('the queue is currently empty!');
+        } 
+
         let embedMessage = new Discord.RichEmbed()
         .setTitle('Songs in queue!')
         .setColor('#10B631')
@@ -255,14 +259,15 @@ async function checkCurrentQueue(msg, serverQueue) {
         });
 
         msg.channel.send(embedMessage);
-    } else {
-        await msg.reply("the queue is currently empty.");
+    }
+    catch (e) {
+        console.log(beatBotUtils.treatErrorMessage(e));
     }
 }
 
 async function repeatCurrentSong(msg, serverQueue) {
-    if(serverQueue && serverQueue.songs.length > 0) {
-        if(!isRepeating) {
+    if (serverQueue && serverQueue.songs.length > 0) {
+        if (!isRepeating) {
             isRepeating = true;
             await msg.reply("repeating the current song.");
         } else {
@@ -300,16 +305,17 @@ async function moveItemToFirstInQueue(msg, serverQueue) {
     .setTitle('Songs in queue!')
     .setColor('#10B631')
     .setDescription('The current video queue. Choose a song for me to prioritize!');
-    if (serverQueue && serverQueue.songs.length > 2) {
-        let count = 1;
-        await serverQueue.songs.forEach((item) => {
-            embedMessage.addField(`${count} - **${item.title}**`, "----------------");
-            count++;
-        });
-    } else {
-        msg.reply("I can't move the video you requested because the queue is empty, has only one song to the played or the requested video does not exist in the queue.");
-        return;
-    }
+
+    if (!serverQueue || serverQueue.songs.length < 2) {
+        return msg.reply("I can't move the video you requested because the queue is empty, has only one song to the played or the requested video does not exist in the queue.");
+    } 
+
+    let count = 1;
+    await serverQueue.songs.forEach((item) => {
+        embedMessage.addField(`${count} - **${item.title}**`, "----------------");
+        count++;
+    });
+
     await msg.channel.send(embedMessage).then(async () => {
         await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 10000 }).then(async collected => {
                     arrayMove.mutate(serverQueue.songs, 1, collected.first().content);

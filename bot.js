@@ -318,7 +318,7 @@ async function moveItemToFirstInQueue(msg, serverQueue) {
 
     await msg.channel.send(embedMessage).then(async () => {
         await msg.channel.awaitMessages(message => message.author.id === msg.author.id, { time: 10000 }).then(async collected => {
-                    arrayMove.mutate(serverQueue.songs, 1, collected.first().content);
+                    arrayMove.mutate(serverQueue.songs, collected.first().content - 1, 1);
                     msg.reply('the requested video has been moved to the top of the list and is going to be played next!');
             })
             .catch((error) => {

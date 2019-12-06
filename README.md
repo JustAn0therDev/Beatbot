@@ -9,7 +9,7 @@ or fork the project and make pull requests
 ## Things to keep in mind:
 
 - If you do want to use the bot with your own discord token and YouTube API v3 Data Key, make sure to run the bot on a Windows machine,
-since the ytdl-core depencency seems to be unstable on Unix.
+since the ytdl-core depencency seems to be unstable on Unix (And if you have any suggestions on how to fix this lack of consistency, let me know!).
 
 - Make sure you're always executing functions and requesting for external resources asynchronosly, as it can lower performance or break the application's current state.
 

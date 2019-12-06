@@ -1,5 +1,5 @@
 # Beatbot
-A Discord Bot for playing music in a discord channel with queues and some other cool stuff. Made using [NodeJS](https://nodejs.org/), [Discord.js](https://discord.js.org/#/) 
+A Discord Bot for playing music in a discord channel with queues and some other cool stuff. Made using [NodeJS](https://nodejs.org/), [Discord.js](https://discord.js.org/#/), [Axios](https://www.npmjs.com/package/axios),
 and [ytdl-core](https://www.npmjs.com/package/ytdl-core).
 
 This NodeJS application was made to be used in a controlled discord channel environment. Feel free to ask me anything

@@ -3,7 +3,6 @@
 
 //Discord.js client module and instance.
 const Discord = require('discord.js');
-const { Client } = require('discord.js');
 
 //Fs required for managing decoupled files.
 const fs = require('fs');
@@ -20,7 +19,7 @@ const axios = require('axios');
 //Youtube Downloader.
 const ytdl = require('ytdl-core'); 
 //Instance of the discord client module.
-const beatBot = new Client();
+const beatBot = new Discord.Client();
 
 //Utilities module.
 const beatBotUtils = require('./commands/utils');
@@ -335,7 +334,7 @@ async function play(guild, song) {
         queue.delete(guild.id);
 		return;
     }
-    const dispatcher = await serverQueue.voiceChannel.connection.playStream(ytdl(song.url))
+    const dispatcher = await serverQueue.voiceChannel.connection.playStream(ytdl(song.url, { highWaterMark: 1<<25, quality: 'highestaudio' }))
     .on('end', () => {
         if (!isRepeating)
             serverQueue.songs.shift();

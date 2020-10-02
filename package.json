@@ -35,7 +35,7 @@
     "parse-time": "^0.1.4",
     "rebuild": "^0.1.2",
     "safe-buffer": "^5.1.2",
-    "ytdl-core": "^0.29.7"
+    "ytdl-core": "^3.3.0"
   },
   "devDependencies": {
     "jest": "^24.9.0"

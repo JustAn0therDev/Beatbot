@@ -14,3 +14,6 @@ since the ytdl-core depencency seems to be unstable on Unix (And if you have any
 - Make sure you're always executing functions and requesting for external resources asynchronosly, as it can lower performance or break the application's current state.
 
 - As of adding stuff to the YouTube video playing side of things, use global variables if they need to be referenced by another discord command.
+
+## IMPORTANT
+This bot is deprecated and not used anymore, as it was one of my first bots and the code is not reliable. The only maintainable discord bot today is [Burinbot](https://github.com/JustAn0therDev/Burinbot). If you want to re-use this code and adapt it to your necessity, feel free to do so.
